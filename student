@@ -1,0 +1,34 @@
+#include <iostream>
+using namespace std;
+
+class Student {
+private:
+    string name;
+    int rollNo;
+
+public:
+    // Constructor
+    Student(string n, int r) {
+        name = n;
+        rollNo = r;
+        cout << "Student constructor called. Name: " << name
+             << ", Roll No: " << rollNo << endl;
+    }
+
+    // Destructor
+    ~Student() {
+        cout << "Student destructor called for: " << name << endl;
+    }
+};
+
+int main() {
+    Student s("Suriya", 192421256);
+
+    return 0;
+}
+
+output:
+Student constructor called. Name: Suriya, Roll No: 192421256
+Student destructor called for: Suriya
+
+=== Code Execution Successful ===
