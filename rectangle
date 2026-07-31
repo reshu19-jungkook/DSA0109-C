@@ -1,0 +1,32 @@
+#include <iostream>
+using namespace std;
+
+class Rectangle {
+    double l, w;
+public:
+    Rectangle(double l, double w) : l(l), w(w) {
+        cout << "Constructed: " << l << " x " << w << endl;
+    }
+    ~Rectangle() {
+        cout << "Destructed" << endl;
+    }
+    double area() { return l * w; }
+};
+
+int main() {
+    double l, w;
+    cin >> l >> w;
+    Rectangle r(l, w);
+    cout << "Area = " << r.area() << endl;
+    return 0;
+}
+
+output:
+5 10
+Constructed: 5 x 10
+Area = 50
+Destructed
+
+
+...Program finished with exit code 0
+Press ENTER to exit console.
