@@ -1,0 +1,25 @@
+#include <iostream>
+using namespace std;
+
+class BankAccount {
+public:
+    BankAccount() { 
+        cout << "Constructor: Bank account created" << endl; 
+    }
+    ~BankAccount() { 
+        cout << "Destructor: Bank account destroyed" << endl; 
+    }
+};
+
+int main() {
+    BankAccount acc;  
+    return 0;         
+}
+
+output:
+Constructor: Bank account created
+Destructor: Bank account destroyed
+
+
+...Program finished with exit code 0
+Press ENTER to exit console.
