@@ -1,0 +1,32 @@
+#include <iostream>
+using namespace std;
+
+class Car {
+private:
+    string model;
+
+public:
+    // Constructor
+    Car(string m) {
+        model = m;
+        cout << "Car constructor called. Model: " << model << endl;
+    }
+
+    // Destructor
+    ~Car() {
+        cout << "Car destructor called. Model: " << model << endl;
+    }
+};
+
+int main() {
+    Car c("Toyota");
+    return 0;
+}
+
+output:
+Car constructor called. Model: Toyota
+Car destructor called. Model: Toyota
+
+
+...Program finished with exit code 0
+Press ENTER to exit console.
