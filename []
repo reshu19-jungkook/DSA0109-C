@@ -1,0 +1,41 @@
+#include <iostream>
+#include <stdexcept>
+
+class MyArray {
+private:
+    int arr[5];
+    int size = 5;
+
+public:
+    MyArray() {
+        for (int i = 0; i < size; i++) {
+            arr[i] = (i + 1) * 10;
+        }
+    }
+
+    int& operator[](int index) {
+        if (index < 0 || index >= size) {
+            throw std::out_of_range("Index out of bounds");
+        }
+        return arr[index];
+    }
+};
+
+int main() {
+    MyArray myArray;
+
+    try {
+        std::cout << "Element at index 0: " << myArray[0] << std::endl;
+        std::cout << "Element at index 2: " << myArray[2] << std::endl;
+
+        myArray[2] = 99;
+        std::cout << "Modified element at index 2: " << myArray[2] << std::endl;
+
+        std::cout << myArray[5] << std::endl;
+    } 
+    catch (const std::out_of_range& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+    }
+
+    return 0;
+}
