@@ -1,0 +1,43 @@
+#include <iostream>
+using namespace std;
+
+class Student {
+private:
+    int id;
+    string name;
+
+public:
+    Student(int i, string n) : id(i), name(n) {}
+
+    bool operator==(const Student& other) const {
+        return (this->id == other.id && this->name == other.name);
+    }
+
+    void display() const {
+        cout << "ID: " << id << ", Name: " << name << endl;
+    }
+};
+
+int main() {
+    Student s1(101, "Alice");
+    Student s2(101, "Alice");
+    Student s3(102, "Bob");
+
+    s1.display();
+    s2.display();
+    s3.display();
+
+    if (s1 == s2) {
+        cout << "s1 and s2 are equal" << endl;
+    } else {
+        cout << "s1 and s2 are not equal" << endl;
+    }
+
+    if (s1 == s3) {
+        cout << "s1 and s3 are equal" << endl;
+    } else {
+        cout << "s1 and s3 are not equal" << endl;
+    }
+
+    return 0;
+}
