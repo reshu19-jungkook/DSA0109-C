@@ -1,0 +1,32 @@
+#include <iostream>
+#include <string>
+
+class Student {
+private:
+    std::string name;
+    int age;
+    double gpa;
+
+public:
+    
+    Student(std::string n, int a, double g) : name(n), age(a), gpa(g) {}
+
+    friend std::ostream& operator<<(std::ostream& os, const Student& s);
+};
+
+
+std::ostream& operator<<(std::ostream& os, const Student& s) {
+    os << "Student Name: " << s.name << "\n"
+       << "Age: " << s.age << "\n"
+       << "GPA: " << s.gpa;
+    return os; 
+}
+
+int main() {
+  
+    Student student1("Alice Smith", 20, 3.85)
+    std::cout << "--- Student Information ---\n";
+    std::cout << student1 << std::endl;
+
+    return 0;
+}
