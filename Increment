@@ -1,0 +1,43 @@
+#include <iostream>
+
+class Counter {
+private:
+    int value;
+
+public:
+     
+    Counter(int val = 0) : value(val) {}
+    Counter& operator++() {
+        ++value;
+        return *this;
+    }
+
+    Counter operator++(int) {
+        Counter temp = *this; // Save current state
+        ++value;              // Increment internal variable
+        return temp;          // Return the old state
+    }
+
+    
+    void display() const {
+        std::cout << "Value: " << value << std::endl;
+    }
+};
+
+int main() {
+    Counter c(5);
+
+    std::cout << "Initial state:" << std::endl;
+    c.display();
+
+    std::cout << "\nUsing Prefix Increment (++c):" << std::endl;
+    (++c).display(); // Increments to 6 and displays
+
+    std::cout << "\nUsing Postfix Increment (c++):" << std::endl;
+    (c++).display(); // Displays current value (6), then increments to 7
+
+    std::cout << "\nFinal state after postfix execution:" << std::endl;
+    c.display(); // Displays 7
+
+    return 0;
+}
