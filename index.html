@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚲 SmartCampus Bike — Smart Campus Bike Sharing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+:root{
+  --bg:#0b1220; --bg2:#111c30; --card:#162338; --card2:#1c2d47;
+  --accent:#22c55e; --accent2:#16a34a; --accent-glow:rgba(34,197,94,.35);
+  --warn:#f59e0b; --danger:#ef4444; --info:#3b82f6; --purple:#8b5cf6;
+  --text:#e8eef7; --muted:#8ba0bb; --border:rgba(255,255,255,.08);
+  --radius:16px; --shadow:0 8px 32px rgba(0,0,0,.35);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--card2);border-radius:4px}
+
+/* ===== TOP BAR ===== */
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:rgba(11,18,32,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
+.brand span{font-size:26px}
+.brand b{color:var(--accent)}
+.nav-links{display:flex;gap:6px}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:14px;font-weight:500;padding:8px 16px;border-radius:10px;transition:.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:var(--card)}
+.user-chip{display:flex;align-items:center;gap:10px;background:var(--card);padding:6px 14px 6px 6px;border-radius:30px;border:1px solid var(--border)}
+.user-chip .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--info));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff}
+.user-chip .info{font-size:13px;line-height:1.2}
+.user-chip .info small{color:var(--muted);font-size:11px}
+
+/* ===== HERO ===== */
+.hero{text-align:center;padding:48px 20px 32px;position:relative}
+.hero::before{content:'';position:absolute;top:-40%;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,var(--accent-glow),transparent 60%);pointer-events:none}
+.hero h1{font-size:42px;font-weight:800;letter-spacing:-1px;position:relative}
+.hero h1 .green{color:var(--accent)}
+.hero p{color:var(--muted);font-size:17px;margin-top:10px;max-width:560px;margin-inline:auto;position:relative}
+.hero-stats{display:flex;justify-content:center;gap:14px;margin-top:28px;flex-wrap:wrap;position:relative}
+.hero-stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 24px;min-width:150px;text-align:center}
+.hero-stat .num{font-size:28px;font-weight:800}
+.hero-stat .lbl{font-size:12px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.hero-stat .num.green{color:var(--accent)}
+.hero-stat .num.blue{color:var(--info)}
+.hero-stat .num.purple{color:var(--purple)}
+
+/* ===== LAYOUT ===== */
+.container{max-width:1200px;margin:0 auto;padding:0 20px 60px}
+.section-title{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:700;margin:48px 0 20px}
+.section-title .emoji{font-size:26px}
+.section-title .line{flex:1;height:1px;background:var(--border)}
+.grid{display:grid;gap:20px}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* ===== CARD ===== */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow)}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.card-head h3{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.badge{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.badge.green{background:rgba(34,197,94,.15);color:var(--accent)}
+.badge.red{background:rgba(239,68,68,.15);color:var(--danger)}
+.badge.amber{background:rgba(245,158,11,.15);color:var(--warn)}
+.badge.blue{background:rgba(59,130,246,.15);color:var(--info)}
+
+/* ===== RECOMMENDATION ===== */
+.rec-input-row{display:flex;gap:10px;margin-bottom:16px}
+.rec-input-row select,.rec-input-row input{flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:12px 14px;border-radius:10px;font-size:14px;font-family:inherit;outline:none}
+.rec-input-row select:focus,.rec-input-row input:focus{border-color:var(--accent)}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit;white-space:nowrap}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--accent-glow)}
+.btn:active{transform:translateY(0)}
+.btn.outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn.outline:hover{border-color:var(--accent);box-shadow:none}
+.rec-result{background:var(--bg2);border-radius:12px;padding:20px;border:1px solid var(--border);min-height:120px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);font-size:14px}
+.rec-result.has-result{display:block;text-align:left}
+.rec-bike-card{display:flex;gap:16px;align-items:center}
+.rec-bike-icon{width:64px;height:64px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--info));display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0}
+.rec-bike-info h4{font-size:18px;margin-bottom:4px}
+.rec-bike-info .meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.rec-bike-info .meta span{font-size:12px;color:var(--muted);background:var(--card);padding:4px 10px;border-radius:8px}
+.rec-reason{margin-top:14px;padding:12px 16px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;font-size:13px;color:var(--accent);line-height:1.5}
+
+/* ===== MAP ===== */
+#campusMap{height:360px;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.map-legend{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap}
+.map-legend .item{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.map-legend .dot{width:12px;height:12px;border-radius:50%}
+.map-legend .dot.green{background:var(--accent)}
+.map-legend .dot.red{background:var(--danger)}
+.map-legend .dot.amber{background:var(--warn)}
+
+/* ===== PREDICTION ===== */
+.predict-chart{display:flex;align-items:flex-end;gap:6px;height:160px;padding:10px 0}
+.predict-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:.2s}
+.predict-bar:hover{transform:translateY(-3px)}
+.predict-bar .bar{width:100%;border-radius:6px 6px 2px 2px;transition:.3s;min-height:4px}
+.predict-bar .hr{font-size:10px;color:var(--muted);white-space:nowrap}
+.predict-bar.peak .bar{background:linear-gradient(180deg,var(--danger),#b91c1c)}
+.predict-bar.high .bar{background:linear-gradient(180deg,var(--warn),#b45309)}
+.predict-bar.med .bar{background:linear-gradient(180deg,var(--accent),var(--accent2))}
+.predict-bar.low .bar{background:linear-gradient(180deg,#334155,#1e293b)}
+.predict-info{margin-top:16px;padding:14px 16px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;font-size:13px;line-height:1.6}
+.predict-info b{color:var(--warn)}
+
+/* ===== ECO POINTS ===== */
+.eco-display{text-align:center;padding:10px 0}
+.eco-circle{width:140px;height:140px;border-radius:50%;margin:0 auto 16px;background:conic-gradient(var(--accent) 0deg,var(--accent) 252deg,rgba(255,255,255,.06) 252deg);display:flex;align-items:center;justify-content:center;position:relative}
+.eco-circle::before{content:'';position:absolute;width:110px;height:110px;border-radius:50%;background:var(--card)}
+.eco-circle .val{position:relative;z-index:1}
+.eco-circle .val .n{font-size:36px;font-weight:800;color:var(--accent)}
+.eco-circle .val .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.eco-sub{font-size:13px;color:var(--muted)}
+.eco-sub b{color:var(--accent)}
+
+/* ===== LEADERBOARD ===== */
+.leader-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.leader-row:last-child{border-bottom:none}
+.leader-rank{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.leader-rank.r1{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000}
+.leader-rank.r2{background:linear-gradient(135deg,#cbd5e1,#94a3b8);color:#000}
+.leader-rank.r3{background:linear-gradient(135deg,#d97706,#b45309);color:#fff}
+.leader-rank.rN{background:var(--card2);color:var(--muted)}
+.leader-name{flex:1;font-size:14px;font-weight:500}
+.leader-name small{display:block;color:var(--muted);font-size:11px;font-weight:400}
+.leader-pts{font-size:15px;font-weight:700;color:var(--accent)}
+.leader-pts small{font-size:11px}
+
+/* ===== CO2 ===== */
+.co2-big{text-align:center;padding:16px 0}
+.co2-big .num{font-size:48px;font-weight:800;color:var(--accent)}
+.co2-big .num small{font-size:18px;color:var(--muted)}
+.co2-big .lbl{font-size:13px;color:var(--muted);margin-top:4px}
+.co2-equiv{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.co2-equiv .item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.co2-equiv .item .ic{font-size:24px}
+.co2-equiv .item .v{font-size:14px;font-weight:700;margin-top:4px}
+.co2-equiv .item .d{font-size:11px;color:var(--muted)}
+
+/* ===== NOTIFICATIONS ===== */
+.notif-list{display:flex;flex-direction:column;gap:10px;max-height:340px;overflow-y:auto}
+.notif{display:flex;gap:12px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;transition:.2s;animation:slideIn .3s ease}
+.notif:hover{border-color:var(--accent)}
+.notif .ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.notif .ic.green{background:rgba(34,197,94,.15)}
+.notif .ic.amber{background:rgba(245,158,11,.15)}
+.notif .ic.blue{background:rgba(59,130,246,.15)}
+.notif .ic.purple{background:rgba(139,92,246,.15)}
+.notif .body{flex:1}
+.notif .body .t{font-size:14px;font-weight:600;line-height:1.3}
+.notif .body .d{font-size:12px;color:var(--muted);margin-top:2px}
+.notif .time{font-size:11px;color:var(--muted);white-space:nowrap}
+@keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+
+/* ===== TOAST ===== */
+.toast-wrap{position:fixed;top:80px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+.toast{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;gap:12px;align-items:center;box-shadow:var(--shadow);animation:toastIn .3s ease;min-width:280px;max-width:360px}
+.toast .ic{font-size:22px}
+.toast .body .t{font-size:14px;font-weight:600}
+.toast .body .d{font-size:12px;color:var(--muted)}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{to{opacity:0;transform:translateX(40px)}}
+
+/* ===== FOOTER ===== */
+.footer{text-align:center;padding:30px 20px;color:var(--muted);font-size:13px;border-top:1px solid var(--border)}
+.footer b{color:var(--accent)}
+
+/* ===== MOBILE ===== */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .hero h1{font-size:30px}
+  .hero-stat{min-width:120px;padding:12px 16px}
+  .hero-stat .num{font-size:22px}
+  .topbar{padding:12px 16px}
+  .brand{font-size:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="brand"><span>🚲</span> Smart<b>Campus</b> Bike</div>
+  <nav class="nav-links">
+    <a href="#recommend" class="active">Recommend</a>
+    <a href="#map">Map</a>
+    <a href="#predict">Predict</a>
+    <a href="#eco">Eco Points</a>
+    <a href="#co2">CO₂</a>
+    <a href="#notif">Alerts</a>
+  </nav>
+  <div class="user-chip">
+    <div class="avatar">AK</div>
+    <div class="info">Alex Kumar<small>Student ID: CS21045</small></div>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>Smart <span class="green">Campus Bike</span> Sharing</h1>
+  <p>Find, rent, and ride the perfect bicycle across campus. Eco-friendly, smart, and built for students.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num green" id="hsBikes">48</div><div class="lbl">Bikes Available</div></div>
+    <div class="hero-stat"><div class="num blue" id="hsStations">12</div><div class="lbl">Active Stations</div></div>
+    <div class="hero-stat"><div class="num purple" id="hsRiders">1,240</div><div class="lbl">Active Riders</div></div>
+    <div class="hero-stat"><div class="num green" id="hsCO2">42.5</div><div class="lbl">kg CO₂ Saved</div></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ===== RECOMMENDATION ===== -->
+  <div id="recommend">
+    <div class="section-title"><span class="emoji">🤖</span> Smart Bike Recommendation <div class="line"></div></div>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-head"><h3>🎯 Plan Your Trip</h3><span class="badge blue">AI Powered</span></div>
+        <label style="font-size:13px;color:var(--muted);margin-bottom:6px;display:block">From Station</label>
+        <div class="rec-input-row">
+          <select id="fromStation">
+            <option value="">Select pickup station…</option>
+          </select>
+        </div>
+        <label style="font-size:13px;color:var(--muted);margin-bottom:6px;display:block">Destination</label>
+        <div class="rec-input-row">
+          <select id="toDest">
+            <option value="">Select destination…</option>
+          </select>
+        </div>
+        <label style="font-size:13px;color:var(--muted);margin-bottom:6px;display:block">Approx. Distance (km)</label>
+        <div class="rec-input-row">
+          <input type="number" id="distance" placeholder="e.g. 2.5" min="0.1" step="0.1">
+          <button class="btn" onclick="recommendBike()">🤖 Recommend</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>✨ Your Recommendation</h3><span class="badge green" id="recBadge" style="display:none">Best Match</span></div>
+        <div class="rec-result" id="recResult">
+          Enter your trip details and get a smart bike recommendation instantly.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MAP ===== -->
+  <div id="map">
+    <div class="section-title"><span class="emoji">📍</span> Campus Map <div class="line"></div></div>
+    <div class="card">
+      <div class="card-head"><h3>🗺️ Bicycle Stations</h3><span class="badge green">Live</span></div>
+      <div id="campusMap"></div>
+      <div class="map-legend">
+        <div class="item"><div class="dot green"></div> Bikes Available</div>
+        <div class="item"><div class="dot amber"></div> Low Stock (1-2)</div>
+        <div class="item"><div class="dot red"></div> No Bikes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PREDICTION + ECO ===== -->
+  <div class="grid grid-2">
+    <div id="predict">
+      <div class="section-title"><span class="emoji">⚡</span> Availability Prediction <div class="line"></div></div>
+      <div class="card">
+        <div class="card-head"><h3>📊 Demand Forecast — Today</h3><span class="badge amber" id="peakBadge">Peak: 9–10 AM</span></div>
+        <div class="predict-chart" id="predictChart"></div>
+        <div class="predict-info" id="predictInfo">
+          ⚠️ <b>High demand expected between 9:00–10:00 AM.</b> Consider riding before 8:30 AM or after 10:30 AM for better bike availability.
+        </div>
+      </div>
+    </div>
+
+    <div id="eco">
+      <div class="section-title"><span class="emoji">🏆</span> Eco Points <div class="line"></div></div>
+      <div class="card">
+        <div class="card-head"><h3>🌱 Your Eco Score</h3><span class="badge green">Level 3</span></div>
+        <div class="eco-display">
+          <div class="eco-circle"><div class="val"><div class="n">120</div><div class="l">Eco Points</div></div></div>
+          <div class="eco-sub">You've earned <b>20 points</b> this week! Ride <b>30 more</b> to reach Level 4 🚀</div>
+        </div>
+        <div style="margin-top:16px">
+          <div class="card-head" style="margin-bottom:10px"><h3>🏅 Top Riders of the Week</h3></div>
+          <div id="leaderboard"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CO2 ===== -->
+  <div id="co2">
+    <div class="section-title"><span class="emoji">🌱</span> CO₂ Saved <div class="line"></div></div>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-head"><h3>🌍 Environmental Impact</h3><span class="badge green">Community</span></div>
+        <div class="co2-big">
+          <div class="num">42.5<small> kg</small></div>
+          <div class="lbl">CO₂ Saved This Month</div>
+        </div>
+        <div class="co2-equiv">
+          <div class="item"><div class="ic">🌳</div><div class="v">2.1 Trees</div><div class="d">Equivalent planted</div></div>
+          <div class="item"><div class="ic">🚗</div><div class="v">180 km</div><div class="d">Car km avoided</div></div>
+          <div class="item"><div class="ic">💡</div><div class="v">9.5 kWh</div><div class="d">Energy saved</div></div>
+          <div class="item"><div class="ic">💧</div><div class="v">510 L</div><div class="d">Water saved</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>📈 Your Personal Impact</h3><span class="badge blue">All Time</span></div>
+        <div class="co2-big">
+          <div class="num" style="font-size:42px">8.2<small> kg</small></div>
+          <div class="lbl">CO₂ Saved by You</div>
+        </div>
+        <div style="display:grid;gap:10px;margin-top:10px">
+          <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">
+            <span style="font-size:14px">🚲 Total Rides</span><span style="font-weight:700;color:var(--accent)">34</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">
+            <span style="font-size:14px">📏 Distance Cycled</span><span style="font-weight:700;color:var(--info)">68.5 km</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">
+            <span style="font-size:14px">🔥 Calories Burned</span><span style="font-weight:700;color:var(--warn)">2,740 kcal</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== NOTIFICATIONS ===== -->
+  <div id="notif">
+    <div class="section-title"><span class="emoji">🔔</span> Smart Notifications <div class="line"></div></div>
+    <div class="card">
+      <div class="card-head">
+        <h3>📢 Live Alerts</h3>
+        <button class="btn outline" style="font-size:12px;padding:8px 16px" onclick="addRandomNotif()">+ Simulate Alert</button>
+      </div>
+      <div class="notif-list" id="notifList"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<div class="footer">
+  Built with 💚 for a greener campus — <b>SmartCampus Bike</b> &copy; 2026
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ===== DATA =====
+const stations = [
+  {id:'S1', name:'Main Gate',          lat:13.0827, lng:80.2707, bikes:8, total:10},
+  {id:'S2', name:'Library Block',      lat:13.0835, lng:80.2720, bikes:0, total:8},
+  {id:'S3', name:'Engineering Block',   lat:13.0843, lng:80.2700, bikes:6, total:10},
+  {id:'S4', name:'Hostel A',           lat:13.0815, lng:80.2715, bikes:2, total:8},
+  {id:'S5', name:'Sports Complex',     lat:13.0850, lng:80.2730, bikes:7, total:10},
+  {id:'S6', name:'Cafeteria',          lat:13.0830, lng:80.2690, bikes:4, total:8},
+  {id:'S7', name:'Science Block',      lat:13.0820, lng:80.2735, bikes:5, total:10},
+  {id:'S8', name:'Auditorium',         lat:13.0848, lng:80.2710, bikes:1, total:6},
+  {id:'S9', name:'Admin Building',     lat:13.0810, lng:80.2695, bikes:3, total:8},
+  {id:'S10',name:'Parking Lot B',      lat:13.0855, lng:80.2740, bikes:6, total:10},
+  {id:'S11',name:'Innovation Lab',     lat:13.0838, lng:80.2745, bikes:0, total:6},
+  {id:'S12',name:'Medical Center',    lat:13.0818, lng:80.2680, bikes:6, total:8},
+];
+
+const bikes = [
+  {id:'B101', type:'Standard',  range:'30 km', weight:'14 kg', bestFor:'short',  condition:'Excellent', station:'S1'},
+  {id:'B102', type:'Electric',  range:'60 km', weight:'22 kg', bestFor:'long',   condition:'Excellent', station:'S1'},
+  {id:'B103', type:'Mountain',  range:'40 km', weight:'16 kg', bestFor:'terrain',condition:'Good',      station:'S3'},
+  {id:'B104', type:'Standard',  range:'30 km', weight:'14 kg', bestFor:'short',  condition:'Good',      station:'S5'},
+  {id:'B105', type:'Electric',  range:'55 km', weight:'22 kg', bestFor:'long',   condition:'Excellent', station:'S3'},
+  {id:'B106', type:'Folding',   range:'25 km', weight:'12 kg', bestFor:'short',  condition:'Excellent', station:'S6'},
+  {id:'B107', type:'Mountain',  range:'40 km', weight:'16 kg', bestFor:'terrain',condition:'Excellent', station:'S5'},
+  {id:'B108', type:'Electric',  range:'50 km', weight:'22 kg', bestFor:'long',   condition:'Good',      station:'S10'},
+  {id:'B109', type:'Standard',  range:'30 km', weight:'14 kg', bestFor:'short',  condition:'Excellent', station:'S12'},
+  {id:'B110', type:'Folding',   range:'25 km', weight:'12 kg', bestFor:'short',  condition:'Good',      station:'S6'},
+];
+
+const leaders = [
+  {name:'Priya Sharma',   rides:52, points:320, dept:'CSE'},
+  {name:'Rahul Verma',    rides:48, points:290, dept:'ECE'},
+  {name:'Sneha Reddy',    rides:41, points:260, dept:'IT'},
+  {name:'Alex Kumar',     rides:34, points:120, dept:'CSE'},
+  {name:'Karthik Nair',   rides:29, points:95,  dept:'MECH'},
+];
+
+const demandData = [
+  {hr:'6',  level:1, label:'Low'},
+  {hr:'7',  level:2, label:'Low'},
+  {hr:'8',  level:4, label:'Med'},
+  {hr:'9',  level:5, label:'Peak'},
+  {hr:'10', level:5, label:'Peak'},
+  {hr:'11', level:3, label:'Med'},
+  {hr:'12', level:4, label:'Med'},
+  {hr:'13', level:3, label:'Med'},
+  {hr:'14', level:2, label:'Low'},
+  {hr:'15', level:3, label:'Med'},
+  {hr:'16', level:4, label:'High'},
+  {hr:'17', level:5, label:'Peak'},
+  {hr:'18', level:4, label:'High'},
+  {hr:'19', level:2, label:'Low'},
+  {hr:'20', level:1, label:'Low'},
+];
+
+// ===== POPULATE DROPDOWNS =====
+const fromSel = document.getElementById('fromStation');
+const toSel = document.getElementById('toDest');
+stations.forEach(s => {
+  fromSel.innerHTML += `<option value="${s.id}">${s.name} (${s.bikes} bikes)</option>`;
+});
+stations.forEach(s => {
+  toSel.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+});
+
+// ===== RECOMMENDATION =====
+function recommendBike(){
+  const from = fromSel.value;
+  const to = toSel.value;
+  const dist = parseFloat(document.getElementById('distance').value);
+  const result = document.getElementById('recResult');
+  const badge = document.getElementById('recBadge');
+
+  if(!from){ result.className='rec-result'; result.innerHTML='⚠️ Please select a pickup station.'; return; }
+  if(!dist || dist <= 0){ result.className='rec-result'; result.innerHTML='⚠️ Please enter a valid distance.'; return; }
+
+  const station = stations.find(s => s.id === from);
+  if(station.bikes === 0){
+    result.className = 'rec-result';
+    result.innerHTML = `❌ No bikes available at <b>${station.name}</b>. Try another station!`;
+    badge.style.display = 'none';
+    return;
+  }
+
+  // Determine best bike type
+  let bestType;
+  if(dist <= 1.5) bestType = 'short';
+  else if(dist > 4) bestType = 'long';
+  else bestType = 'short';
+
+  // Find best bike at station
+  let candidates = bikes.filter(b => b.station === from);
+  if(candidates.length === 0) candidates = bikes; // fallback
+  let best = candidates.find(b => b.bestFor === bestType) || candidates[0];
+
+  // Reasoning
+  let reason;
+  if(best.type === 'Electric' && dist > 3){
+    reason = `⚡ Electric bike recommended for longer trips — saves your energy and covers ${dist} km easily within its ${best.range} range.`;
+  } else if(best.type === 'Mountain'){
+    reason = `🚵 Mountain bike recommended — great for campus terrain and durability over ${dist} km.`;
+  } else if(best.type === 'Folding'){
+    reason = `🚲 Folding bike recommended — lightweight and portable, perfect for your ${dist} km trip.`;
+  } else {
+    reason = `✅ Standard bike is the best fit for your ${dist} km trip — economical and readily available.`;
+  }
+
+  // Estimated time (avg 15 km/h)
+  const estTime = Math.ceil((dist / 15) * 60);
+
+  badge.style.display = 'inline-block';
+  result.className = 'rec-result has-result';
+  result.innerHTML = `
+    <div class="rec-bike-card">
+      <div class="rec-bike-icon">🚲</div>
+      <div class="rec-bike-info">
+        <h4>Recommended Bike: ${best.id}</h4>
+        <div style="color:var(--muted);font-size:13px">${best.type} • ${best.condition} Condition</div>
+        <div class="meta">
+          <span>📏 ${best.range} range</span>
+          <span>⚖️ ${best.weight}</span>
+          <span>⏱️ ~${estTime} min ride</span>
+          <span>📍 ${station.name}</span>
+        </div>
+      </div>
+    </div>
+    <div class="rec-reason">${reason}</div>
+    <button class="btn" style="margin-top:14px;width:100%" onclick="rentBike('${best.id}','${station.name}')">🔓 Rent ${best.id} Now</button>
+  `;
+}
+
+function rentBike(id, stationName){
+  showToast('🚲', `Bike ${id} Unlocked!`, `Pick up at ${stationName}. Happy riding!`);
+  setTimeout(() => {
+    showToast('🎉', 'You earned 20 Eco Points!', 'Total: 140 Eco Points 🌱');
+    // Update eco circle
+    const ecoVal = document.querySelector('.eco-circle .val .n');
+    let cur = parseInt(ecoVal.textContent);
+    ecoVal.textContent = cur + 20;
+  }, 2000);
+}
+
+// ===== MAP =====
+const map = L.map('campusMap').setView([13.0830, 80.2710], 15);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap',
+  maxZoom: 19,
+}).addTo(map);
+
+stations.forEach(s => {
+  let color, status;
+  if(s.bikes === 0){ color = '#ef4444'; status = 'No bikes available'; }
+  else if(s.bikes <= 2){ color = '#f59e0b'; status = `Low stock: ${s.bikes} left`; }
+  else { color = '#22c55e'; status = `${s.bikes} bikes available`; }
+
+  const icon = L.divIcon({
+    className: 'custom-marker',
+    html: `<div style="width:26px;height:26px;border-radius:50% 50% 50% 0;background:${color};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4);transform:rotate(-45deg);display:flex;align-items:center;justify-content:center"><span style="transform:rotate(45deg);font-size:12px">🚲</span></div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 26],
+  });
+
+  L.marker([s.lat, s.lng], {icon}).addTo(map)
+    .bindPopup(`<div style="font-family:Inter,sans-serif"><b>${s.name}</b><br>🚲 ${s.bikes}/${s.total} bikes available<br><span style="color:${color};font-weight:600">${status}</span><br><button onclick="fromStation.value='${s.id}';recommendBike()" style="margin-top:8px;background:#22c55e;color:#fff;border:none;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600">Pick up here</button></div>`);
+});
+
+// ===== PREDICTION CHART =====
+const chartEl = document.getElementById('predictChart');
+demandData.forEach(d => {
+  const cls = d.level >= 5 ? 'peak' : d.level >= 4 ? 'high' : d.level >= 3 ? 'med' : 'low';
+  const h = (d.level / 5) * 100;
+  const bar = document.createElement('div');
+  bar.className = `predict-bar ${cls}`;
+  bar.innerHTML = `<div class="bar" style="height:${h}%"></div><div class="hr">${d.hr}</div>`;
+  bar.title = `${d.hr}:00 — ${d.label} demand`;
+  chartEl.appendChild(bar);
+});
+
+// ===== LEADERBOARD =====
+const lbEl = document.getElementById('leaderboard');
+leaders.forEach((l, i) => {
+  const rankCls = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : 'rN';
+  lbEl.innerHTML += `
+    <div class="leader-row">
+      <div class="leader-rank ${rankCls}">${i+1}</div>
+      <div class="leader-name">${l.name} <small>${l.dept} • ${l.rides} rides</small></div>
+      <div class="leader-pts">${l.points} <small>pts</small></div>
+    </div>`;
+});
+
+// ===== NOTIFICATIONS =====
+const notifTemplates = [
+  {ic:'🚲', cls:'green', t:'Bike B104 is now available', d:'Sports Complex station — 7 bikes ready'},
+  {ic:'⚠️', cls:'amber', t:'High demand near Main Gate', d:'Only 2 bikes left. Hurry up!'},
+  {ic:'🎉', cls:'purple', t:'You earned 20 Eco Points!', d:'Total: 140 Eco Points 🌱'},
+  {ic:'🔔', cls:'blue', t:'Bike B102 returned to Library Block', d:'Now available for rent'},
+  {ic:'🌱', cls:'green', t:'You saved 1.2 kg CO₂ today!', d:'Keep riding for a greener campus'},
+  {ic:'🏆', cls:'amber', t:'You moved up to Rank #4!', d:'Top Riders of the Week leaderboard'},
+];
+
+let notifCount = 0;
+function addNotif(template){
+  const list = document.getElementById('notifList');
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const div = document.createElement('div');
+  div.className = 'notif';
+  div.innerHTML = `
+    <div class="ic ${template.cls}">${template.ic}</div>
+    <div class="body"><div class="t">${template.t}</div><div class="d">${template.d}</div></div>
+    <div class="time">${time}</div>`;
+  list.prepend(div);
+  notifCount++;
+  if(list.children.length > 15) list.lastChild.remove();
+}
+
+function addRandomNotif(){
+  const t = notifTemplates[Math.floor(Math.random() * notifTemplates.length)];
+  addNotif(t);
+  showToast(t.ic, t.t, t.d);
+}
+
+// Initial notifications
+notifTemplates.slice(0, 4).forEach(t => addNotif(t));
+
+// ===== TOAST =====
+function showToast(ic, title, desc){
+  const wrap = document.getElementById('toastWrap');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<div class="ic">${ic}</div><div class="body"><div class="t">${title}</div><div class="d">${desc}</div></div>`;
+  wrap.appendChild(toast);
+  setTimeout(() => {
+    toast.style.animation = 'toastOut .3s ease forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+// ===== AUTO NOTIFICATIONS =====
+setInterval(() => {
+  if(Math.random() > 0.6) addRandomNotif();
+}, 15000);
+
+// ===== NAV ACTIVE STATE =====
+document.querySelectorAll('.nav-links a').forEach(a => {
+  a.addEventListener('click', function(){
+    document.querySelectorAll('.nav-links a').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ===== LIVE HERO COUNTER UPDATE =====
+setInterval(() => {
+  const bikesEl = document.getElementById('hsBikes');
+  let v = parseInt(bikesEl.textContent);
+  v += Math.random() > 0.5 ? 1 : -1;
+  v = Math.max(30, Math.min(60, v));
+  bikesEl.textContent = v;
+}, 5000);
+</script>
+</body>
+</html>
